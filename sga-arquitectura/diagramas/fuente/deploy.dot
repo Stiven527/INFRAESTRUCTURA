@@ -1,0 +1,23 @@
+digraph G{ rankdir=TB; compound=true; nodesep=0.4; ranksep=0.6; node[fontname="DejaVu Sans",shape=box3d,style=filled,fillcolor="#FFFFFF",fontsize=10]; edge[fontname="DejaVu Sans",fontsize=9,color="#444444"];
+U[label="Navegador web\n(PC / móvil)",shape=box,style="rounded,filled",fillcolor="#E8EEF7"];
+subgraph cluster_dmz{label="Zona pública (DMZ)";style="rounded,filled";fillcolor="#FDECEA";color="#B03A2E";
+ WAF[label="Reverse proxy / Balanceador\nNginx + TLS 1.2+ (HTTPS)\nWAF, rate limiting"];
+ STA[label="Servidor de estáticos / CDN\n(SPA compilada)"];}
+subgraph cluster_app{label="Zona de aplicación (red privada)";style="rounded,filled";fillcolor="#F4F7EC";color="#4C6B22";
+ A1[label="Nodo API 1\nContenedor Docker\nMonolito modular"];
+ A2[label="Nodo API 2\nContenedor Docker\nMonolito modular"];
+ RD[label="Redis\n(caché/sesiones)",shape=cylinder];}
+subgraph cluster_db{label="Zona de datos (sin acceso público)";style="rounded,filled";fillcolor="#FDF1E7";color="#9C4A00";
+ DBP[label="PostgreSQL primario\ncifrado en reposo",shape=cylinder];
+ DBR[label="PostgreSQL réplica\n(lectura / failover)",shape=cylinder];
+ BKP[label="Almacén de respaldos\n(diario + WAL, copia externa cifrada)",shape=folder];}
+MON[label="Monitoreo y logs\n(Prometheus / Grafana / ELK)"];
+U->WAF[label="HTTPS 443"];
+WAF->STA[label="HTTP interno"];
+WAF->A1[label="HTTP/TLS interno\n/api"];WAF->A2;
+A1->DBP[label="TCP 5432 TLS"];A2->DBP;
+A1->RD[style=dashed];A2->RD[style=dashed];
+DBP->DBR[label="replicación"];
+DBP->BKP[label="respaldo cifrado"];
+A1->MON[style=dashed];A2->MON[style=dashed];
+}

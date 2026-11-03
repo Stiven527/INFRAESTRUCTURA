@@ -1,0 +1,28 @@
+digraph G{ rankdir=TB; compound=true; nodesep=0.35; ranksep=0.55; node[fontname="DejaVu Sans",shape=box,style="rounded,filled",fontsize=10,fillcolor="#FFFFFF"]; edge[fontname="DejaVu Sans",fontsize=8,color="#444444"];
+subgraph cluster_fe{label="Capa de presentación";style="rounded,filled";fillcolor="#E8EEF7";color="#1F3A5F";
+ SPA[label="Aplicación web SPA\n(React, responsive, WCAG)"];}
+subgraph cluster_api{label="Backend: monolito modular (API REST /api/v1)";style="rounded,filled";fillcolor="#F4F7EC";color="#4C6B22";
+ GW[label="Capa API\nControladores REST + validación + OpenAPI"];
+ AUTH[label="Módulo Autenticación\ny Autorización (RBAC)"];
+ ACAD[label="Módulo Gestión Académica\n(estudiantes, docentes, programas,\nasignaturas, periodos, grupos)"];
+ MAT[label="Módulo Matrículas"];
+ CAL[label="Módulo Calificaciones"];
+ REP[label="Módulo Reportes\ny Búsqueda"];
+ AUD[label="Módulo Auditoría"];
+ INFRA[label="Capa de acceso a datos (ORM / repositorios)\n+ transacciones"];}
+subgraph cluster_data{label="Capa de datos y servicios";style="rounded,filled";fillcolor="#FDF1E7";color="#9C4A00";
+ DB[label="PostgreSQL\n(datos académicos + auditoría)",shape=cylinder];
+ CACHE[label="Caché (Redis)\nsesiones/consultas",shape=cylinder];
+ BK[label="Servicio de respaldos"];}
+SPA->GW[label="HTTPS / JSON "];
+GW->AUTH[label="verifica token y rol"];
+GW->ACAD;GW->MAT;GW->CAL;GW->REP;
+MAT->ACAD[label="valida grupo/cupo"];
+CAL->MAT[label="valida matrícula"];
+REP->ACAD;REP->MAT;REP->CAL;
+MAT->AUD[label="evento"];CAL->AUD[label="evento"];AUTH->AUD[label="evento"];
+ACAD->INFRA;MAT->INFRA;CAL->INFRA;REP->INFRA;AUD->INFRA;AUTH->INFRA;
+INFRA->DB[label="SQL (TLS)"];
+AUTH->CACHE[style=dashed];REP->CACHE[style=dashed];
+BK->DB[label="pg_dump / WAL"];
+}
